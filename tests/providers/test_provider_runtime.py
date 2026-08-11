@@ -32,6 +32,7 @@ from free_claude_code.config.provider_catalog import (
     QWENCLOUD_DEFAULT_BASE,
     SILICONFLOW_DEFAULT_BASE,
     SUPPORTED_PROVIDER_IDS,
+    TELEPUB_VOYAGE_DEFAULT_BASE,
     TOGETHER_DEFAULT_BASE,
     TOKENROUTER_DEFAULT_BASE,
     VERCEL_AI_GATEWAY_DEFAULT_BASE,
@@ -106,6 +107,8 @@ def _make_settings(**overrides):
     mock.agnes_api_key = "test_agnes_key"
     mock.zenmux_api_key = "test_zenmux_key"
     mock.wandb_api_key = "test_wandb_key"
+    mock.telepub_voyage_api_key = "test_telepub_voyage_key"
+    mock.telepub_voyage_base_url = TELEPUB_VOYAGE_DEFAULT_BASE
     mock.lm_studio_base_url = "http://localhost:1234/v1"
     mock.llamacpp_base_url = "http://localhost:8080/v1"
     mock.ollama_base_url = "http://localhost:11434"
@@ -138,6 +141,7 @@ def _make_settings(**overrides):
     mock.agnes_proxy = None
     mock.zenmux_proxy = None
     mock.wandb_proxy = None
+    mock.telepub_voyage_proxy = None
     mock.fireworks_proxy = None
     mock.fireworks_api_key = "test_fireworks_key"
     mock.novita_proxy = None
@@ -915,6 +919,7 @@ def test_create_provider_instantiates_each_builtin():
         "agnes": OpenAIChatProvider,
         "zenmux": OpenAIChatProvider,
         "wandb": OpenAIChatProvider,
+        "telepub_voyage": OpenAIChatProvider,
         "gemini": GeminiProvider,
         "vertex": VertexProvider,
         "groq": GroqProvider,
