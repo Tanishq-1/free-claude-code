@@ -76,6 +76,7 @@ class OpenAIChatProvider(BaseProvider):
             provider_name=self._provider_name,
             default_headers=default_headers,
             api_key_provider=api_key_provider,
+            credential_optional=self._profile.credential_optional,
         )
         self._chat = OpenAIChatTransport(
             client=self._client,
