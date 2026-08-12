@@ -7,6 +7,7 @@ from typing import Literal
 
 from pydantic import BaseModel, Field
 
+from free_claude_code.application.model_metadata import ProviderModelInfo
 from free_claude_code.application.ports import RequestRuntimePort
 from free_claude_code.config.model_refs import configured_chat_model_refs
 from free_claude_code.config.settings import Settings
@@ -27,6 +28,13 @@ class ModelCatalogView(StrEnum):
     CLAUDE = "claude"
     MESSAGES = "messages"
     RESPONSES = "responses"
+
+
+class ModelPricing(BaseModel):
+    """Per-1K-token pricing (USD) advertised for a model, when known."""
+
+    input: float | None = None
+    output: float | None = None
 
 
 class ModelResponse(BaseModel):
@@ -65,6 +73,10 @@ class ModelResponse(BaseModel):
     inference_idle_timeout_seconds: int | None = Field(
         default=None, serialization_alias="inferenceIdleTimeoutSecs"
     )
+    # Optional capability/pricing metadata, surfaced only when the
+    # upstream provider advertised it (omitted from the payload when None).
+    capabilities: list[str] | None = None
+    pricing: ModelPricing | None = None
 
 
 class ModelsListResponse(BaseModel):
@@ -148,14 +160,15 @@ def _build_claude_models_response(
     seen: set[str] = set()
 
     for ref in configured_chat_model_refs(settings):
-        model_info = runtime.cached_model_info(ref.provider_id, ref.model_id)
+        cached_info = runtime.cached_model_info(ref.provider_id, ref.model_id)
         _append_provider_model_variants(
             models,
             seen,
             ref.model_ref,
             supports_thinking=(
-                model_info.supports_thinking if model_info is not None else None
+                cached_info.supports_thinking if cached_info is not None else None
             ),
+            metadata=cached_info,
         )
 
     for model_info in runtime.cached_prefixed_model_infos():
@@ -164,6 +177,7 @@ def _build_claude_models_response(
             seen,
             model_info.model_id,
             supports_thinking=model_info.supports_thinking,
+            metadata=model_info,
         )
 
     for model in SUPPORTED_CLAUDE_MODELS:
@@ -296,11 +310,30 @@ def _responses_inference_idle_timeout_seconds(provider_progress_timeout: float) 
     return math.ceil(provider_progress_timeout) + _INFERENCE_IDLE_TIMEOUT_MARGIN_SECONDS
 
 
-def _discovered_model_response(model_id: str, *, display_name: str) -> ModelResponse:
+def _discovered_model_response(
+    model_id: str,
+    *,
+    display_name: str,
+    metadata: ProviderModelInfo | None = None,
+) -> ModelResponse:
+    """Build a discovered-model response, attaching optional upstream metadata."""
+    pricing = None
+    if metadata is not None and metadata.pricing is not None:
+        pricing = ModelPricing(
+            input=metadata.pricing.input,
+            output=metadata.pricing.output,
+        )
+    capabilities = (
+        list(metadata.capabilities)
+        if metadata is not None and metadata.capabilities
+        else None
+    )
     return ModelResponse(
         id=model_id,
         display_name=display_name,
         created_at=DISCOVERED_MODEL_CREATED_AT,
+        capabilities=capabilities,
+        pricing=pricing,
     )
 
 
@@ -319,6 +352,7 @@ def _append_provider_model_variants(
     provider_model_ref: str,
     *,
     supports_thinking: bool | None = None,
+    metadata: ProviderModelInfo | None = None,
 ) -> None:
     if supports_thinking is not False:
         _append_unique_model(
@@ -327,6 +361,7 @@ def _append_provider_model_variants(
             _discovered_model_response(
                 gateway_model_id(provider_model_ref),
                 display_name=provider_model_ref,
+                metadata=metadata,
             ),
         )
     _append_unique_model(
@@ -335,5 +370,6 @@ def _append_provider_model_variants(
         _discovered_model_response(
             no_thinking_gateway_model_id(provider_model_ref),
             display_name=f"{provider_model_ref} (no thinking)",
+            metadata=metadata,
         ),
     )
