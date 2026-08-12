@@ -22,6 +22,7 @@ from free_claude_code.providers.admission import (
 )
 from free_claude_code.providers.base import BaseProvider, ProviderConfig
 from free_claude_code.providers.endpoint_types import EndpointContext
+from free_claude_code.providers.key_pool import KeyPool, is_key_rotation_failure
 from free_claude_code.providers.model_listing import (
     extract_openai_model_infos,
     merge_model_list_pages,
@@ -49,6 +50,7 @@ class OpenAIChatProvider(BaseProvider):
         api_key_provider: OpenAIAsyncCredentialProvider | None = None,
         client: AsyncOpenAI | None = None,
         endpoint_transport: httpx2.AsyncBaseTransport | None = None,
+        key_pool: KeyPool | None = None,
     ) -> None:
         super().__init__(config)
         if behavior is None:
@@ -61,15 +63,22 @@ class OpenAIChatProvider(BaseProvider):
         self._profile = behavior.profile
         self._provider_name = self._profile.provider_name
         self._api_key = config.api_key
+        self._key_pool = key_pool
         self._base_url = self._profile.base_url(config.base_url).rstrip("/")
         self._admission = admission
         self._owns_client = client is None
+        # Resolve the credential per request only when rotating a key pool;
+        # otherwise pass the static key so single-key behaviour is unchanged.
+        resolved_api_key_provider: OpenAIAsyncCredentialProvider | None = (
+            api_key_provider
+            or (self._resolve_api_key if self._key_pool is not None else None)
+        )
         self._client = client or create_chat_client(
             config,
             base_url=self._base_url,
             provider_name=self._provider_name,
             default_headers=default_headers,
-            api_key_provider=api_key_provider,
+            api_key_provider=resolved_api_key_provider,
         )
         self._chat = OpenAIChatTransport(
             client=self._client,
@@ -79,7 +88,38 @@ class OpenAIChatProvider(BaseProvider):
             log_raw_sse_events=config.log_raw_sse_events,
             log_api_error_tracebacks=config.log_api_error_tracebacks,
             endpoint_transport=endpoint_transport,
+            on_stream_created=self._report_key_success,
+            on_stream_error=self._report_key_failure,
         )
+
+    async def _resolve_api_key(self) -> str:
+        """Return the API key for the next upstream request.
+
+        With a key pool this rotates round-robin and skips keys in cooldown;
+        without one it returns the single configured key (unchanged behaviour).
+        """
+        if self._key_pool is not None:
+            return self._key_pool.current_key()
+        if self._api_key is None:
+            raise ValueError(f"{self._provider_name} requires an API key")
+        return self._api_key
+
+    def _report_key_failure(self, error: Exception) -> None:
+        """Sideline the current pool key when upstream rejects it.
+
+        Triggers rotation on rate-limit (429), auth (401), and permission (403)
+        failures — the cases where failing over to another key can help. No-op
+        without a key pool or for errors a fresh key would not fix.
+        """
+        if self._key_pool is None:
+            return
+        if is_key_rotation_failure(error):
+            self._key_pool.report_failure()
+
+    def _report_key_success(self) -> None:
+        """Mark the current pool key healthy after a successful upstream call."""
+        if self._key_pool is not None:
+            self._key_pool.report_success()
 
     async def cleanup(self) -> None:
         """Release HTTP client resources."""
