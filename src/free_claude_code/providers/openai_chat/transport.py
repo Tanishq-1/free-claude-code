@@ -532,6 +532,8 @@ class OpenAIChatTransport:
         log_raw_sse_events: bool,
         log_api_error_tracebacks: bool,
         endpoint_transport: httpx2.AsyncBaseTransport | None = None,
+        on_stream_created: Callable[[], None] | None = None,
+        on_stream_error: Callable[[Exception], None] | None = None,
     ) -> None:
         self._client = client
         self._admission = admission
@@ -542,6 +544,8 @@ class OpenAIChatTransport:
         self._log_raw_sse_events = log_raw_sse_events
         self._log_api_error_tracebacks = log_api_error_tracebacks
         self._endpoint_transport = endpoint_transport
+        self._on_stream_created = on_stream_created
+        self._on_stream_error = on_stream_error
         self._model_output_caps: dict[str, int] = {}
 
     def _log_stream_transport_error(
@@ -710,11 +714,15 @@ class OpenAIChatTransport:
                     )
                 )
                 stream = self._behavior.normalize_stream(stream, body)
+                if self._on_stream_created is not None:
+                    self._on_stream_created()
                 retain_attempt = True
                 return stream, body, attempt, create_body
             except asyncio.CancelledError:
                 raise
             except Exception as error:
+                if self._on_stream_error is not None:
+                    self._on_stream_error(error)
                 retry_body = await request_recovery.retry_request(
                     error,
                     provider_authentication_status(error),
