@@ -335,6 +335,46 @@ async def test_model_listing_propagates_upstream_errors() -> None:
         await provider.list_model_infos()
 
 
+@pytest.mark.asyncio
+async def test_model_listing_captures_optional_upstream_metadata() -> None:
+    """Upstream context/pricing/capability fields are surfaced when present."""
+    provider = profiled_provider(
+        "llamacpp",
+        make_provider_config(api_key="llamacpp", base_url="http://localhost:8080/v1"),
+        admission=immediate_admission(),
+    )
+    with patch.object(
+        provider._client.models,
+        "list",
+        new_callable=AsyncMock,
+        return_value=SimpleNamespace(
+            data=[
+                SimpleNamespace(
+                    id="rich/model",
+                    context_window=128000,
+                    max_output_tokens=8192,
+                    vision=True,
+                    tools=True,
+                    pricing={"input": 0.0001, "output": 0.0002},
+                ),
+                SimpleNamespace(id="plain/model"),
+            ]
+        ),
+    ):
+        infos = await provider.list_model_infos()
+
+    rich = next(info for info in infos if info.model_id == "rich/model")
+    assert rich.capabilities == ("chat", "vision", "tools")
+    assert rich.pricing is not None
+    assert rich.pricing.input == 0.0001
+    assert rich.pricing.output == 0.0002
+
+    # A bare id-only item keeps all optional metadata unset (backward compat).
+    plain = next(info for info in infos if info.model_id == "plain/model")
+    assert plain.capabilities == ()
+    assert plain.pricing is None
+
+
 class FakeProvider(BaseProvider):
     def __init__(
         self,

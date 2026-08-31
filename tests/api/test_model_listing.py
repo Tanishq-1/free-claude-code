@@ -2,7 +2,10 @@ import math
 
 from fastapi.testclient import TestClient
 
-from free_claude_code.application.model_metadata import ProviderModelInfo
+from free_claude_code.application.model_metadata import (
+    ProviderModelInfo,
+    ProviderModelPricing,
+)
 from free_claude_code.config.settings import Settings
 from free_claude_code.core.model_capabilities import ModelInputModality
 from tests.api.support import create_test_app, provider_manager_for_app
@@ -366,3 +369,43 @@ def test_unknown_model_view_is_rejected():
     response = TestClient(create_test_app(_settings())).get("/v1/models?view=other")
 
     assert response.status_code == 422
+
+
+def test_models_list_surfaces_cached_model_metadata():
+    """Optional pricing/capability metadata appears when cached."""
+    app = create_test_app(_settings(model_opus=None, model_haiku=None))
+    provider_manager_for_app(app).cache_model_infos(
+        "deepseek",
+        {
+            ProviderModelInfo(
+                "deepseek-chat",
+                supports_thinking=True,
+                context_window_tokens=128000,
+                max_output_tokens=8192,
+                capabilities=("chat", "tools"),
+                pricing=ProviderModelPricing(input=0.0001, output=0.0002),
+            )
+        },
+    )
+
+    response = TestClient(app).get("/v1/models")
+
+    assert response.status_code == 200
+    by_id = {item["id"]: item for item in response.json()["data"]}
+    rich = by_id["anthropic/deepseek/deepseek-chat"]
+    assert rich["capabilities"] == ["chat", "tools"]
+    assert rich["pricing"] == {"input": 0.0001, "output": 0.0002}
+
+
+def test_models_list_omits_metadata_when_upstream_does_not_provide_it():
+    """Models without metadata omit the optional fields entirely."""
+    app = create_test_app(_settings(model_opus=None, model_haiku=None))
+    _cache_models(app, "deepseek", "deepseek-chat")
+
+    response = TestClient(app).get("/v1/models")
+
+    assert response.status_code == 200
+    by_id = {item["id"]: item for item in response.json()["data"]}
+    plain = by_id["anthropic/deepseek/deepseek-chat"]
+    assert "capabilities" not in plain
+    assert "pricing" not in plain
