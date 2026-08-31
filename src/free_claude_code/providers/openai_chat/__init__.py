@@ -2,6 +2,7 @@
 
 from free_claude_code.providers.admission import ProviderAdmissionController
 from free_claude_code.providers.base import ProviderConfig
+from free_claude_code.providers.key_pool import KeyPool, parse_api_keys
 
 from .base_url import openai_v1_base_url
 from .extra_body import (
@@ -31,10 +32,17 @@ def create_openai_chat_provider(
     config: ProviderConfig,
     admission: ProviderAdmissionController,
 ) -> OpenAIChatProvider:
-    """Construct one profile-driven provider."""
+    """Construct one profile-driven provider.
+
+    When the configured credential holds several comma-separated API keys, a
+    rotating KeyPool is attached so the provider fails over between them on
+    rate-limit/auth errors (issue #1301). A single key keeps static behaviour.
+    """
     profile = OPENAI_CHAT_PROFILES.get(provider_id)
     if profile is None:
         raise KeyError(f"No declarative OpenAI-chat profile for {provider_id!r}")
+    keys = parse_api_keys(config.api_key or "")
+    key_pool = KeyPool(keys) if len(keys) > 1 else None
     return OpenAIChatProvider(
         config,
         profile=profile,
@@ -42,6 +50,7 @@ def create_openai_chat_provider(
         default_headers=(
             {"User-Agent": profile.user_agent} if profile.user_agent else None
         ),
+        key_pool=key_pool,
     )
 
 
