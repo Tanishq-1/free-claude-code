@@ -363,6 +363,15 @@ class Settings(BaseModel):
         validation_alias="OLLAMA_BASE_URL",
     )
 
+    # ==================== Custom (OpenAI-compatible) Config ====================
+    # Generic user-defined endpoint. Base URL is required to activate; API key optional.
+    custom_base_url: OptionalNonEmptyString = Field(
+        default=None, validation_alias="CUSTOM_BASE_URL"
+    )
+    custom_api_key: OptionalNonEmptyString = Field(
+        default=None, validation_alias="CUSTOM_API_KEY"
+    )
+
     # ==================== Model ====================
     # All Claude model requests are mapped to this single model (fallback)
     # Format: provider_type/model/name
@@ -537,6 +546,9 @@ class Settings(BaseModel):
     )
     telepub_voyage_proxy: OptionalNonEmptyString = Field(
         default=None, validation_alias="TELEPUB_VOYAGE_PROXY"
+    )
+    custom_proxy: OptionalNonEmptyString = Field(
+        default=None, validation_alias="CUSTOM_PROXY"
     )
 
     # ==================== Provider Rate Limiting ====================
