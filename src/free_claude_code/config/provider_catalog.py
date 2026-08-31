@@ -87,6 +87,8 @@ AGNES_DEFAULT_BASE = "https://apihub.agnes-ai.com/v1"
 ZENMUX_DEFAULT_BASE = "https://zenmux.ai/api/v1"
 # W&B Serverless Inference OpenAI-compatible API.
 WANDB_INFERENCE_DEFAULT_BASE = "https://api.inference.wandb.ai/v1"
+# Telepub Voyage OpenAI-compatible Chat Completions API.
+TELEPUB_VOYAGE_DEFAULT_BASE = "https://voyage.prod.telepub.cn/voyage/api"
 
 
 class ProviderAuthKind(StrEnum):
@@ -583,6 +585,16 @@ PROVIDER_CATALOG: dict[str, ProviderDescriptor] = {
         default_base_url=OLLAMA_DEFAULT_BASE,
         base_url_attr="ollama_base_url",
         local=True,
+    ),
+    "telepub_voyage": ProviderDescriptor(
+        provider_id="telepub_voyage",
+        display_name="Telepub Voyage",
+        credential_env="TELEPUB_VOYAGE_API_KEY",
+        credential_url="https://voyage.prod.telepub.cn/",
+        credential_attr="telepub_voyage_api_key",
+        default_base_url=TELEPUB_VOYAGE_DEFAULT_BASE,
+        base_url_attr="telepub_voyage_base_url",
+        proxy_attr="telepub_voyage_proxy",
     ),
 }
 

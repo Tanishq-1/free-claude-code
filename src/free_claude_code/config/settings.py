@@ -18,6 +18,7 @@ from .provider_catalog import (
     BEDROCK_DEFAULT_BASE,
     NARAROUTE_DEFAULT_BASE,
     SUPPORTED_PROVIDER_IDS,
+    TELEPUB_VOYAGE_DEFAULT_BASE,
     TOKENROUTER_DEFAULT_BASE,
 )
 from .reasoning import ReasoningPreference
@@ -204,6 +205,15 @@ class Settings(BaseModel):
     # ==================== LLM7.io (OpenAI-compatible) ====================
     llm7_api_key: OptionalNonEmptyString = Field(
         default=None, validation_alias="LLM7_API_KEY"
+    )
+
+    # ==================== Telepub Voyage Config ====================
+    telepub_voyage_api_key: OptionalNonEmptyString = Field(
+        default=None, validation_alias="TELEPUB_VOYAGE_API_KEY"
+    )
+    telepub_voyage_base_url: NonEmptyString = Field(
+        default=TELEPUB_VOYAGE_DEFAULT_BASE,
+        validation_alias="TELEPUB_VOYAGE_BASE_URL",
     )
 
     # ==================== Fireworks AI Config ====================
@@ -525,6 +535,10 @@ class Settings(BaseModel):
     ollama_cloud_proxy: OptionalNonEmptyString = Field(
         default=None, validation_alias="OLLAMA_CLOUD_PROXY"
     )
+    telepub_voyage_proxy: OptionalNonEmptyString = Field(
+        default=None, validation_alias="TELEPUB_VOYAGE_PROXY"
+    )
+
     # ==================== Provider Rate Limiting ====================
     provider_rate_limit: int = Field(default=1, validation_alias="PROVIDER_RATE_LIMIT")
     provider_rate_window: int = Field(
