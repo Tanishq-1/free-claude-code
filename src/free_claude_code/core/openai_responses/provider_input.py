@@ -18,6 +18,7 @@ from free_claude_code.core.anthropic.tool_results import (
     ToolResultText,
     decompose_tool_result_content,
 )
+from free_claude_code.core.anthropic.tool_schema import sanitize_tool_schema_patterns
 from free_claude_code.core.history_replay import (
     HistoryReplayError,
     ReplayOrigin,
@@ -31,7 +32,6 @@ from free_claude_code.core.history_replay import (
 from free_claude_code.core.json_types import JsonObject
 from free_claude_code.core.openai_tool_names import OpenAIToolNameCodec
 from free_claude_code.core.reasoning import ReasoningPolicy
-from free_claude_code.core.tool_schema_patterns import translate_tool_schema_patterns
 
 from .errors import ResponsesConversionError
 from .reasoning import responses_reasoning_config
@@ -92,8 +92,10 @@ def build_responses_provider_request(
                 "type": "function",
                 "name": tool_names.encode(tool.name),
                 "description": tool.description,
-                "parameters": translate_tool_schema_patterns(
-                    tool.input_schema or {"type": "object", "properties": {}}
+                "parameters": (
+                    sanitize_tool_schema_patterns(tool.input_schema)
+                    if tool.input_schema
+                    else {"type": "object", "properties": {}}
                 ),
                 "strict": False,
             }
