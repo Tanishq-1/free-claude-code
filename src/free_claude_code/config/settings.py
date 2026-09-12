@@ -17,8 +17,8 @@ from .model_refs import parse_model_fallbacks
 from .nim import NimSettings
 from .provider_catalog import (
     BEDROCK_DEFAULT_BASE,
-    LIGHTNING_DEFAULT_BASE,
     EXPERIENTIAL_DEFAULT_BASE,
+    LIGHTNING_DEFAULT_BASE,
     NARAROUTE_DEFAULT_BASE,
     ORCAROUTER_DEFAULT_BASE,
     SUPPORTED_PROVIDER_IDS,
