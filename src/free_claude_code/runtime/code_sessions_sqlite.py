@@ -3,7 +3,7 @@
 import asyncio
 import json
 import sqlite3
-from collections.abc import Callable, Sequence
+from collections.abc import Callable, Collection, Sequence
 
 from free_claude_code.application.code_sessions.models import (
     ACTIVE_RUN_STATUSES,
@@ -48,6 +48,13 @@ _PROMPT_TRANSITIONS = {
     "resolved": {"resolved"},
     "expired": {"expired"},
 }
+_TABLES = frozenset({"code_sessions", "code_runs", "code_items", "code_prompts"})
+
+
+def _check_sql_identifiers(table: str, columns: Collection[str]) -> None:
+    """Fail closed unless every interpolated SQL identifier is known-safe."""
+    if table not in _TABLES or any(not column.isidentifier() for column in columns):
+        raise ValueError("Unsafe SQL identifier")
 
 
 def _values(record: Record) -> dict[str, object]:
@@ -72,6 +79,7 @@ def _record[T: Record](model: type[T], row: sqlite3.Row) -> T:
 
 def _insert(connection: sqlite3.Connection, table: str, record: Record) -> None:
     values = _values(record)
+    _check_sql_identifiers(table, values)
     connection.execute(
         f"INSERT INTO {table} ({','.join(values)}) VALUES ({','.join('?' for _ in values)})",
         tuple(values.values()),
@@ -85,6 +93,7 @@ def _update(
     where: str,
     parameters: tuple[object, ...],
 ) -> None:
+    _check_sql_identifiers(table, values)
     result = connection.execute(
         f"UPDATE {table} SET {','.join(f'{key} = ?' for key in values)} WHERE {where}",
         (*values.values(), *parameters),
