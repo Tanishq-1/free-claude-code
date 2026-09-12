@@ -143,8 +143,7 @@ async def apply_admin_config(
         return await services.admin.apply_admin_config(
             _filtered_values(payload.values), payload.custom_provider
         )
-    result = await services.admin.apply_admin_config(_filtered_values(payload.values))
-    return result
+    return await services.admin.apply_admin_config(_filtered_values(payload.values))
 
 
 @router.get("/admin/api/status")

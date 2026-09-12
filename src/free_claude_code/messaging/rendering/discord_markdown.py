@@ -63,7 +63,7 @@ def render_markdown_to_discord(text: str) -> str:
     def render_inline_table_plain(children) -> str:
         out: list[str] = []
         for tok in children:
-            if tok.type == "text" or tok.type == "code_inline":
+            if tok.type in {"text", "code_inline"}:
                 out.append(tok.content)
             elif tok.type in {"softbreak", "hardbreak"}:
                 out.append(" ")
@@ -81,11 +81,11 @@ def render_markdown_to_discord(text: str) -> str:
                 out.append(escape_discord(tok.content))
             elif t in {"softbreak", "hardbreak"}:
                 out.append("\n")
-            elif t == "em_open" or t == "em_close":
+            elif t in {"em_open", "em_close"}:
                 out.append("*")
-            elif t == "strong_open" or t == "strong_close":
+            elif t in {"strong_open", "strong_close"}:
                 out.append("**")
-            elif t == "s_open" or t == "s_close":
+            elif t in {"s_open", "s_close"}:
                 out.append("~~")
             elif t == "code_inline":
                 out.append(f"`{escape_discord_code(tok.content)}`")
@@ -106,7 +106,7 @@ def render_markdown_to_discord(text: str) -> str:
                     i += 1
                 link_text = ""
                 for child in inner_tokens:
-                    if child.type == "text" or child.type == "code_inline":
+                    if child.type in {"text", "code_inline"}:
                         link_text += child.content
                 out.append(f"[{escape_discord(link_text)}]({href})")
             elif t == "image":
@@ -248,11 +248,10 @@ def render_markdown_to_discord(text: str) -> str:
 
             if rows:
                 col_count = max((len(r) for r in rows), default=0)
-                norm_rows: list[list[str]] = []
-                for r in rows:
-                    if len(r) < col_count:
-                        r = r + [""] * (col_count - len(r))
-                    norm_rows.append(r)
+                norm_rows: list[list[str]] = [
+                    r if len(r) >= col_count else r + [""] * (col_count - len(r))
+                    for r in rows
+                ]
 
                 widths: list[int] = []
                 for c in range(col_count):
@@ -299,9 +298,8 @@ def render_markdown_to_discord(text: str) -> str:
                 pending_prefix = None
             rendered = apply_blockquote(rendered)
             out.append(rendered)
-        else:
-            if tok.content:
-                out.append(escape_discord(tok.content))
+        elif tok.content:
+            out.append(escape_discord(tok.content))
         i += 1
 
     return "".join(out).rstrip()

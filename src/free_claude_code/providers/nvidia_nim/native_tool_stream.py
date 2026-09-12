@@ -105,7 +105,7 @@ class _MiniMaxM3ToolFramer:
             self._validate_trailing_text(text)
             return ""
 
-        candidate = "".join((self._text_tail, text))
+        candidate = f"{self._text_tail}{text}"
         marker_index = candidate.find(_TOOL_BLOCK_START)
         held_length = _partial_marker_suffix_length(candidate, _TOOL_BLOCK_START)
         protected_namespace_index = (
@@ -160,7 +160,7 @@ class _MiniMaxM3ToolFramer:
         return ""
 
     def _feed_tool_block(self, text: str) -> None:
-        candidate = "".join((self._tool_tail, text))
+        candidate = f"{self._tool_tail}{text}"
         marker_index = candidate.find(_TOOL_BLOCK_END)
         if marker_index < 0:
             held_length = _partial_marker_suffix_length(candidate, _TOOL_BLOCK_END)
@@ -670,7 +670,7 @@ def _join_optional_text(first: Any, second: str) -> Any:
     if not second:
         return first
     if isinstance(first, str):
-        return "".join((first, second))
+        return f"{first}{second}"
     return second
 
 

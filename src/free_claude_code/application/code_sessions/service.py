@@ -7,6 +7,7 @@ from contextlib import asynccontextmanager
 from dataclasses import dataclass, field
 from pathlib import Path
 
+from anyio import to_thread
 from loguru import logger
 
 from free_claude_code.application.errors import ApplicationUnavailableError
@@ -291,10 +292,15 @@ class CodeService:
         await self._wait_for_store()
         self._require_available()
         _validate_id(session_id)
-        try:
+
+        def _resolve_folder() -> Path:
             folder = Path(cwd).expanduser().resolve(strict=True)
             if not folder.is_dir():
                 raise ValueError
+            return folder
+
+        try:
+            folder = await to_thread.run_sync(_resolve_folder)
         except OSError, ValueError, RuntimeError:
             raise CodeValidationError(
                 "Choose an existing folder on the FCC computer."
