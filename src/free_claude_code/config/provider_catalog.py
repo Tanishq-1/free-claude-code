@@ -82,6 +82,8 @@ POOLSIDE_DEFAULT_BASE = "https://inference.poolside.ai/v1"
 LLM7_DEFAULT_BASE = "https://api.llm7.io/v1"
 # Lightning AI Model APIs OpenAI-compatible Chat Completions gateway.
 LIGHTNING_DEFAULT_BASE = "https://lightning.ai/api/v1"
+# Experiential Labs OpenAI-compatible Chat Completions gateway.
+EXPERIENTIAL_DEFAULT_BASE = "https://api.experientiallabs.ai/v1"
 # Agnes AI OpenAI-compatible Chat Completions API.
 AGNES_DEFAULT_BASE = "https://apihub.agnes-ai.com/v1"
 # ZenMux OpenAI-compatible Chat Completions gateway.
@@ -558,6 +560,16 @@ PROVIDER_CATALOG: dict[str, ProviderDescriptor] = {
         default_base_url=LIGHTNING_DEFAULT_BASE,
         base_url_attr="lightning_base_url",
         proxy_attr="lightning_proxy",
+    ),
+    "experiential": ProviderDescriptor(
+        provider_id="experiential",
+        display_name="Experiential Labs",
+        credential_env="EXPLABS_API_KEY",
+        credential_url="https://platform.experientiallabs.ai/settings/api-keys",
+        credential_attr="experiential_api_key",
+        default_base_url=EXPERIENTIAL_DEFAULT_BASE,
+        base_url_attr="experiential_base_url",
+        proxy_attr="experiential_proxy",
     ),
     "ollama_cloud": ProviderDescriptor(
         provider_id="ollama_cloud",

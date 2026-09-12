@@ -53,6 +53,7 @@ _EXPECTED_PROVIDER_ORDER: tuple[str, ...] = (
     "poolside",
     "llm7",
     "lightning",
+    "experiential",
     "ollama_cloud",
     "lmstudio",
     "llamacpp",

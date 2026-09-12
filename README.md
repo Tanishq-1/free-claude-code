@@ -235,6 +235,7 @@ from more than one provider before succeeding.
 | [LLM7.io](https://dash.llm7.io/) | `LLM7_API_KEY` | `llm7/default` |
 | [Telepub Voyage](https://voyage.prod.telepub.cn/) | `TELEPUB_VOYAGE_API_KEY` | `telepub_voyage/voyage-3-large` |
 | [Lightning AI](https://lightning.ai/) | `LIGHTNING_API_KEY` | `lightning/lightning-ai/gpt-oss-120b` |
+| [Experiential Labs](https://platform.experientiallabs.ai/) | `EXPLABS_API_KEY` | `experiential/gemma-4-26b-a4b-it-free` |
 | [Ollama Cloud](https://ollama.com/settings/keys) | `OLLAMA_API_KEY` | `ollama_cloud/qwen3-coder:480b` |
 | [LM Studio](https://lmstudio.ai/) | `LM_STUDIO_BASE_URL` | `lmstudio/<model-id>` |
 | [llama.cpp](https://github.com/ggml-org/llama.cpp) | `LLAMACPP_BASE_URL` | `llamacpp/<model-id>` |
