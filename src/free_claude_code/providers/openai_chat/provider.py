@@ -9,6 +9,7 @@ from enum import StrEnum
 from typing import Any, cast
 
 import httpx2
+import openai
 from loguru import logger
 from openai import AsyncOpenAI, DefaultAsyncHttpx2Client
 
@@ -80,6 +81,7 @@ from free_claude_code.providers.http import (
     close_provider_stream,
     maybe_await_aclose,
 )
+from free_claude_code.providers.key_pool import KeyPool
 from free_claude_code.providers.model_listing import (
     extract_openai_model_infos,
     merge_model_list_pages,
@@ -127,6 +129,27 @@ from .usage import (
 OpenAIAsyncCredentialProvider = Callable[[], Awaitable[str]]
 _ExtraReasoningEvents = Callable[[Any, ChatStreamOutput], Iterator[str]]
 _ChatOutputFactory = Callable[[], ChatStreamOutput]
+
+
+def _is_key_rotation_failure(error: Exception) -> bool:
+    """Return whether an upstream error warrants failing over to another key.
+
+    Rate-limit (429), authentication (401), and permission (403) errors are
+    key-specific, so rotating to another configured key can succeed. Other
+    errors (bad request, overload, timeouts) are not key-specific.
+    """
+    if isinstance(
+        error,
+        openai.RateLimitError
+        | openai.AuthenticationError
+        | openai.PermissionDeniedError,
+    ):
+        return True
+    status = getattr(error, "status_code", None)
+    if status in (401, 403, 429):
+        return True
+    response = getattr(error, "response", None)
+    return getattr(response, "status_code", None) in (401, 403, 429)
 
 
 @dataclass(frozen=True, slots=True)
@@ -530,6 +553,7 @@ class OpenAIChatProvider(BaseProvider):
         api_key_provider: OpenAIAsyncCredentialProvider | None = None,
         client: AsyncOpenAI | None = None,
         endpoint_transport: httpx2.AsyncBaseTransport | None = None,
+        key_pool: KeyPool | None = None,
     ):
         super().__init__(config)
         self._profile = profile
@@ -540,6 +564,7 @@ class OpenAIChatProvider(BaseProvider):
                 f"{profile.provider_name} requires an API key or credential provider"
             )
         self._api_key = config.api_key
+        self._key_pool = key_pool
         self._base_url = profile.base_url(config.base_url).rstrip("/")
         # Learned per-model output-token caps from upstream 400 rejections, so
         # later requests clamp proactively instead of paying the 400 each time.
@@ -558,14 +583,32 @@ class OpenAIChatProvider(BaseProvider):
                 timeout=timeout,
             )
         self._owns_client = client is None
+        # Resolve the credential per request only when rotating a key pool;
+        # otherwise pass the static key so single-key behaviour is unchanged.
+        resolved_api_key: str | OpenAIAsyncCredentialProvider | None = (
+            api_key_provider
+            or (self._resolve_api_key if self._key_pool is not None else self._api_key)
+        )
         self._client = client or AsyncOpenAI(
-            api_key=api_key_provider or self._api_key,
+            api_key=resolved_api_key,
             base_url=self._base_url,
             max_retries=0,
             default_headers=default_headers,
             timeout=timeout,
             http_client=http_client,
         )
+
+    async def _resolve_api_key(self) -> str:
+        """Return the API key for the next upstream request.
+
+        With a key pool this rotates round-robin and skips keys in cooldown;
+        without one it returns the single configured key (unchanged behaviour).
+        """
+        if self._key_pool is not None:
+            return self._key_pool.current_key()
+        if self._api_key is None:
+            raise ValueError(f"{self._provider_name} requires an API key")
+        return self._api_key
 
     async def cleanup(self) -> None:
         """Release HTTP client resources."""
@@ -809,6 +852,23 @@ class OpenAIChatProvider(BaseProvider):
         """Return provider-specific failure semantics, or defer to shared policy."""
         return None
 
+    def _report_key_failure(self, error: Exception) -> None:
+        """Sidelining the current pool key when upstream rejects it.
+
+        Triggers rotation on rate-limit (429), auth (401), and permission (403)
+        failures — the cases where failing over to another key can help. No-op
+        without a key pool or for errors a fresh key would not fix.
+        """
+        if self._key_pool is None:
+            return
+        if _is_key_rotation_failure(error):
+            self._key_pool.report_failure()
+
+    def _report_key_success(self) -> None:
+        """Mark the current pool key healthy after a successful upstream call."""
+        if self._key_pool is not None:
+            self._key_pool.report_success()
+
     def _prepare_create_body(self, body: dict[str, Any]) -> dict[str, Any]:
         """Return the body passed to the upstream OpenAI-compatible client."""
         return body
@@ -909,11 +969,13 @@ class OpenAIChatProvider(BaseProvider):
                     stream=True,
                 )
                 stream = self._normalize_stream(stream, body)
+                self._report_key_success()
                 retain_attempt = True
                 return stream, body, attempt, create_body
             except asyncio.CancelledError:
                 raise
             except Exception as error:
+                self._report_key_failure(error)
                 if endpoint is not None and await endpoint.retry_authentication(
                     error, attempt, execution
                 ):
