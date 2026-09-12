@@ -367,12 +367,6 @@ def migrate_env_setting_in_text(
     return "".join(lines), True
 
 
-def env_text_needs_migration(text: str, migration: EnvMigration) -> bool:
-    """Return whether one setting migration would change text."""
-
-    return migrate_env_setting_in_text(text, migration)[1]
-
-
 def _legacy_base_path() -> Path | None:
     for path in legacy_env_paths():
         if path.is_file():

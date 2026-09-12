@@ -1,14 +1,11 @@
 """Admin configuration manifest."""
 
-from collections.abc import Iterable
-
 from free_claude_code.config.provider_catalog import PROVIDER_CATALOG
 from free_claude_code.config.reasoning import (
     ROOT_REASONING_PREFERENCES,
     ROUTE_REASONING_PREFERENCES,
     ReasoningPreference,
 )
-from free_claude_code.config.settings import Settings
 
 from .provider_manifest import provider_field_specs
 from .specs import ConfigFieldSpec, ConfigOptionSpec, ConfigSectionSpec
@@ -586,25 +583,7 @@ FIELDS: tuple[ConfigFieldSpec, ...] = (
 FIELD_BY_KEY = {field.key: field for field in FIELDS}
 
 
-def field_input_key(field: ConfigFieldSpec) -> str | None:
-    """Return the Settings input key used for a manifest field."""
-
-    if field.settings_attr is None:
-        return None
-    model_field = Settings.model_fields[field.settings_attr]
-    alias = model_field.validation_alias
-    if alias is None:
-        return field.settings_attr
-    return str(alias)
-
-
 def env_keys() -> frozenset[str]:
     """Return env keys owned by the admin manifest."""
 
     return frozenset(field.key for field in FIELDS)
-
-
-def fields_with_attrs() -> Iterable[ConfigFieldSpec]:
-    """Yield fields that validate through Settings."""
-
-    return (field for field in FIELDS if field.settings_attr is not None)
