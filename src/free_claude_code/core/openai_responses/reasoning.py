@@ -30,16 +30,6 @@ def combine_reasoning(existing: str | None, addition: str | None) -> str | None:
     return f"{existing}\n{addition}"
 
 
-def responses_reasoning_to_output_config(value: Any) -> dict[str, Any] | None:
-    """Preserve the client's named effort for application-level resolution."""
-    if not isinstance(value, Mapping):
-        return None
-    effort = value.get("effort")
-    if isinstance(effort, str) and effort.strip():
-        return {"effort": effort.strip().lower()}
-    return None
-
-
 def responses_reasoning_policy(value: object) -> ReasoningPolicy:
     """Parse the supported reasoning intent from a Responses request field."""
 

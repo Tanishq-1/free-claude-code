@@ -8,15 +8,6 @@ from free_claude_code.config.loader import compose_settings_snapshot
 from free_claude_code.config.settings import Settings
 
 
-def validate_values(
-    values: Mapping[str, str], process: Mapping[str, str]
-) -> tuple[bool, list[str]]:
-    """Validate proposed env values against the Settings model."""
-
-    settings, errors = settings_from_values(values, process)
-    return settings is not None, errors
-
-
 def settings_from_values(
     values: Mapping[str, str],
     process: Mapping[str, str],
