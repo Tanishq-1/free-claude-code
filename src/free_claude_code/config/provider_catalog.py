@@ -84,6 +84,8 @@ LLM7_DEFAULT_BASE = "https://api.llm7.io/v1"
 LIGHTNING_DEFAULT_BASE = "https://lightning.ai/api/v1"
 # Experiential Labs OpenAI-compatible Chat Completions gateway.
 EXPERIENTIAL_DEFAULT_BASE = "https://api.experientiallabs.ai/v1"
+# OrcaRouter OpenAI-compatible multi-provider gateway.
+ORCAROUTER_DEFAULT_BASE = "https://api.orcarouter.ai/v1"
 # Agnes AI OpenAI-compatible Chat Completions API.
 AGNES_DEFAULT_BASE = "https://apihub.agnes-ai.com/v1"
 # ZenMux OpenAI-compatible Chat Completions gateway.
@@ -570,6 +572,16 @@ PROVIDER_CATALOG: dict[str, ProviderDescriptor] = {
         default_base_url=EXPERIENTIAL_DEFAULT_BASE,
         base_url_attr="experiential_base_url",
         proxy_attr="experiential_proxy",
+    ),
+    "orcarouter": ProviderDescriptor(
+        provider_id="orcarouter",
+        display_name="OrcaRouter",
+        credential_env="ORCAROUTER_API_KEY",
+        credential_url="https://www.orcarouter.ai/console",
+        credential_attr="orcarouter_api_key",
+        default_base_url=ORCAROUTER_DEFAULT_BASE,
+        base_url_attr="orcarouter_base_url",
+        proxy_attr="orcarouter_proxy",
     ),
     "ollama_cloud": ProviderDescriptor(
         provider_id="ollama_cloud",

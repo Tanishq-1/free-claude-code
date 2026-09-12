@@ -276,6 +276,20 @@ _PROVIDER_FIELD_OVERRIDES: dict[str, ProviderFieldOverride] = {
             "Defaults to https://lightning.ai/api/v1."
         ),
     },
+    "ORCAROUTER_API_KEY": {
+        "label": "OrcaRouter API Key",
+        "description": (
+            "OrcaRouter OpenAI-compatible multi-provider gateway API key for "
+            "api.orcarouter.ai/v1. Keys begin with sk-orca-; create one at "
+            "www.orcarouter.ai/console."
+        ),
+    },
+    "ORCAROUTER_BASE_URL": {
+        "description": (
+            "OrcaRouter OpenAI-compatible Chat Completions base URL. "
+            "Defaults to https://api.orcarouter.ai/v1."
+        ),
+    },
     "AGNES_API_KEY": {
         "label": "Agnes AI API Key",
         "description": (

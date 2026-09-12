@@ -20,6 +20,7 @@ from .provider_catalog import (
     LIGHTNING_DEFAULT_BASE,
     EXPERIENTIAL_DEFAULT_BASE,
     NARAROUTE_DEFAULT_BASE,
+    ORCAROUTER_DEFAULT_BASE,
     SUPPORTED_PROVIDER_IDS,
     TELEPUB_VOYAGE_DEFAULT_BASE,
     TOKENROUTER_DEFAULT_BASE,
@@ -218,6 +219,15 @@ class Settings(BaseModel):
     experiential_base_url: NonEmptyString = Field(
         default=EXPERIENTIAL_DEFAULT_BASE,
         validation_alias="EXPLABS_BASE_URL",
+    )
+
+    # ==================== OrcaRouter (OpenAI-compatible gateway) ====================
+    orcarouter_api_key: OptionalNonEmptyString = Field(
+        default=None, validation_alias="ORCAROUTER_API_KEY"
+    )
+    orcarouter_base_url: NonEmptyString = Field(
+        default=ORCAROUTER_DEFAULT_BASE,
+        validation_alias="ORCAROUTER_BASE_URL",
     )
 
     # ==================== Fireworks AI Config ====================
@@ -523,6 +533,9 @@ class Settings(BaseModel):
     )
     experiential_proxy: OptionalNonEmptyString = Field(
         default=None, validation_alias="EXPLABS_PROXY"
+    )
+    orcarouter_proxy: OptionalNonEmptyString = Field(
+        default=None, validation_alias="ORCAROUTER_PROXY"
     )
     fireworks_proxy: OptionalNonEmptyString = Field(
         default=None, validation_alias="FIREWORKS_PROXY"

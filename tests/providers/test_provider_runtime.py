@@ -28,6 +28,7 @@ from free_claude_code.config.provider_catalog import (
     NARAROUTE_DEFAULT_BASE,
     NEBIUS_DEFAULT_BASE,
     OLLAMA_CLOUD_DEFAULT_BASE,
+    ORCAROUTER_DEFAULT_BASE,
     POOLSIDE_DEFAULT_BASE,
     PROVIDER_CATALOG,
     QWENCLOUD_CODING_DEFAULT_BASE,
@@ -126,6 +127,8 @@ def _make_settings(**overrides):
     mock.lightning_base_url = LIGHTNING_DEFAULT_BASE
     mock.experiential_api_key = "test_experiential_key"
     mock.experiential_base_url = EXPERIENTIAL_DEFAULT_BASE
+    mock.orcarouter_api_key = "test_orcarouter_key"
+    mock.orcarouter_base_url = ORCAROUTER_DEFAULT_BASE
     mock.nvidia_nim_proxy = None
     mock.open_router_proxy = None
     mock.lmstudio_proxy = None
@@ -175,6 +178,7 @@ def _make_settings(**overrides):
     mock.llm7_proxy = None
     mock.lightning_proxy = None
     mock.experiential_proxy = None
+    mock.orcarouter_proxy = None
     mock.kilo_api_key = "test_kilo_key"
     mock.kilo_proxy = None
     mock.openai_proxy = None
@@ -328,6 +332,31 @@ def test_experiential_provider_config_uses_key_base_and_proxy() -> None:
     assert descriptor.proxy_attr == "experiential_proxy"
     assert config.api_key == "experiential-token"
     assert config.base_url == "https://custom.experientiallabs.example/v1"
+    assert config.proxy == "http://proxy.test:8080"
+    assert isinstance(provider, OpenAIChatProvider)
+
+
+def test_orcarouter_provider_config_uses_key_base_and_proxy() -> None:
+    descriptor = PROVIDER_CATALOG["orcarouter"]
+    settings = _make_settings(
+        orcarouter_api_key="orcarouter-token",
+        orcarouter_base_url=ORCAROUTER_DEFAULT_BASE,
+        orcarouter_proxy="http://proxy.test:8080",
+    )
+
+    config = build_provider_config(descriptor, settings)
+    with patch("free_claude_code.providers.openai_chat.provider.AsyncOpenAI"):
+        provider = create_provider("orcarouter", settings)
+
+    assert descriptor.display_name == "OrcaRouter"
+    assert descriptor.credential_env == "ORCAROUTER_API_KEY"
+    assert descriptor.credential_attr == "orcarouter_api_key"
+    assert descriptor.credential_url == "https://www.orcarouter.ai/console"
+    assert descriptor.default_base_url == ORCAROUTER_DEFAULT_BASE
+    assert descriptor.base_url_attr == "orcarouter_base_url"
+    assert descriptor.proxy_attr == "orcarouter_proxy"
+    assert config.api_key == "orcarouter-token"
+    assert config.base_url == ORCAROUTER_DEFAULT_BASE
     assert config.proxy == "http://proxy.test:8080"
     assert isinstance(provider, OpenAIChatProvider)
 
@@ -928,6 +957,7 @@ def test_create_provider_instantiates_each_builtin():
         "llm7": OpenAIChatProvider,
         "lightning": OpenAIChatProvider,
         "experiential": OpenAIChatProvider,
+        "orcarouter": OpenAIChatProvider,
         "opencode_go": OpenCodeProvider,
         "vercel": OpenAIChatProvider,
         "bedrock": OpenAIChatProvider,
