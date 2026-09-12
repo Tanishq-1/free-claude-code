@@ -512,7 +512,7 @@ def _prepare_chat_content(
             if record is None and structured_details:
                 restored.append(detail)
                 continue
-            elif (
+            if (
                 record is not None
                 and destination.accepts(record.origin)
                 and structured_details

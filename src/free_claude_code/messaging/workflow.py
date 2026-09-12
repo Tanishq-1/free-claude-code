@@ -196,9 +196,7 @@ class MessagingWorkflow:
         targets = self._pending_restored_status_targets
         self._pending_restored_status_targets = ()
         for target in targets:
-            if self.platform_name != "messaging" and (
-                target.scope.platform != self.platform_name
-            ):
+            if self.platform_name not in ("messaging", target.scope.platform):
                 continue
             try:
                 await self.outbound.queue_edit_message(

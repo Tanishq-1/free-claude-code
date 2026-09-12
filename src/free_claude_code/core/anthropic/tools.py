@@ -110,7 +110,7 @@ class FunctionTagToolParser:
                 return self.disable()
             return ""
 
-        candidate = "".join((self._marker_tail, text))
+        candidate = f"{self._marker_tail}{text}"
         marker_index = candidate.find(_FUNCTION_TAG_BLOCK_START)
         if marker_index >= 0:
             visible = candidate[:marker_index]
@@ -120,7 +120,7 @@ class FunctionTagToolParser:
             self._parts.append(control)
             self._length = len(control)
             if self._length > _MAX_FUNCTION_TAG_CANDIDATE_CHARS:
-                return "".join((visible, self.disable()))
+                return f"{visible}{self.disable()}"
             return visible
 
         held_length = _partial_function_tag_marker_suffix_length(candidate)

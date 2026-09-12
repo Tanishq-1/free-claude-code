@@ -249,7 +249,7 @@ def _openai_chat_tool_result(block: Any) -> _OpenAIChatToolResult:
             tool_message={
                 "role": "tool",
                 "tool_call_id": tool_id,
-                "content": serialized if serialized else "",
+                "content": serialized or "",
             }
         )
 

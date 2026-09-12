@@ -148,7 +148,7 @@ def resolve_messages_options(
             raise NativeMessagesError(f"This model does not support effort {effort!r}.")
         if capabilities.supports_output_effort is False:
             raise NativeMessagesError("This model does not support output effort.")
-        elif (
+        if (
             capabilities.supports_output_effort is None
             and supported is None
             and native_mode is None

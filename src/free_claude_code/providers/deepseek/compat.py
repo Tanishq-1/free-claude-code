@@ -218,7 +218,7 @@ def _is_server_listed_tool(tool: Mapping[str, Any]) -> bool:
         return True
     typ = tool.get("type")
     if isinstance(typ, str):
-        return typ.startswith("web_search") or typ.startswith("web_fetch")
+        return typ.startswith(("web_search", "web_fetch"))
     return False
 
 

@@ -780,7 +780,5 @@ CREATE TABLE IF NOT EXISTS code_items(
 CREATE INDEX IF NOT EXISTS code_items_run ON code_items(session_id,run_id,sequence);
 CREATE TABLE IF NOT EXISTS code_deleted(id TEXT PRIMARY KEY NOT NULL);
 """
-    + "CREATE TABLE IF NOT EXISTS code_prompts"
-    + _PROMPT_COLUMNS
-    + ";"
+    "CREATE TABLE IF NOT EXISTS code_prompts" + _PROMPT_COLUMNS + ";"
 )

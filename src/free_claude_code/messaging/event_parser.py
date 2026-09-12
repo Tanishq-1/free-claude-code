@@ -34,7 +34,7 @@ def parse_cli_event(event: Any, *, log_raw_cli: bool = False) -> list[dict]:
 
     # 1. Handle full messages (assistant/user or result)
     msg_obj = None
-    if etype == "assistant" or etype == "user":
+    if etype in ("assistant", "user"):
         msg_obj = event.get("message")
     elif etype == "result":
         res = event.get("result")
@@ -148,14 +148,14 @@ def parse_cli_event(event: Any, *, log_raw_cli: bool = False) -> list[dict]:
             mlen = len(msg) if isinstance(msg, str) else 0
             logger.info("CLI_PARSER: Parsed error event: message_chars={}", mlen)
         return [{"type": "error", "message": msg}]
-    elif etype == "exit":
+    if etype == "exit":
         code = event.get("code", 0)
         stderr = event.get("stderr")
         if code == 0:
             logger.debug(f"CLI_PARSER: Successful exit (code={code})")
             return [{"type": "complete", "status": "success"}]
 
-        error_msg = stderr if stderr else f"Process exited with code {code}"
+        error_msg = stderr or f"Process exited with code {code}"
         if log_raw_cli:
             logger.warning(
                 "CLI_PARSER: Error exit (code={}): {}",

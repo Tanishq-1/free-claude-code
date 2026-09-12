@@ -126,8 +126,7 @@ async def apply_admin_config(
     services: ApiServices = Depends(get_services),
 ):
     require_loopback_admin(request)
-    result = await services.admin.apply_admin_config(_filtered_values(payload.values))
-    return result
+    return await services.admin.apply_admin_config(_filtered_values(payload.values))
 
 
 @router.get("/admin/api/status")

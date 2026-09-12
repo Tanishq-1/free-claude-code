@@ -62,10 +62,12 @@ _PROFILE = OpenAIChatProfile(
 
 _REASONING_FIELD = "reasoning_effort"
 _KNOWN_VALUES = frozenset({"none", "default", "low", "medium", "high"})
-_FIELD_PATTERN = re.compile(r"(?<![a-z0-9_])reasoning_effort(?![a-z0-9_])", re.I)
+_FIELD_PATTERN = re.compile(
+    r"(?<![a-z0-9_])reasoning_effort(?![a-z0-9_])", re.IGNORECASE
+)
 _VALUE_PATTERN = re.compile(
     r"(?<![a-z0-9_])(none|default|low|medium|high)(?![a-z0-9_])",
-    re.I,
+    re.IGNORECASE,
 )
 _ALLOWED_MARKER = re.compile(
     r"(?:"
@@ -73,7 +75,7 @@ _ALLOWED_MARKER = re.compile(
     r"|expected(?:\s+to\s+be)?\s+one\s+of"
     r"|(?:allowed|valid|accepted)\s+(?:values?|options?)"
     r")",
-    re.I,
+    re.IGNORECASE,
 )
 _CLAUSE_END = re.compile(r"(?:\r?\n|;|[.!?](?:\s|$))")
 _UNSUPPORTED_PHRASE = re.compile(
@@ -85,7 +87,7 @@ _UNSUPPORTED_PHRASE = re.compile(
     r"|does\s+not\s+support"
     r"|is\s+not\s+supported"
     r")",
-    re.I,
+    re.IGNORECASE,
 )
 
 

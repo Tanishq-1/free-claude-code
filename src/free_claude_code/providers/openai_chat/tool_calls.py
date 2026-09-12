@@ -436,7 +436,7 @@ def _merge_tool_name(existing: str, incoming: str) -> str:
         return incoming
     if existing.startswith(incoming):
         return existing
-    return "".join((existing, incoming))
+    return f"{existing}{incoming}"
 
 
 def _decode_streamed_tool_name(

@@ -103,7 +103,7 @@ class ManagedClaudeSessionManager:
                         raise RuntimeError("Managed Claude session is closing.")
                     return session, lookup_id, False
 
-            temp_id = session_id if session_id else f"pending_{uuid.uuid4().hex[:8]}"
+            temp_id = session_id or f"pending_{uuid.uuid4().hex[:8]}"
 
             new_session = ManagedClaudeSession(
                 workspace_path=self.workspace,

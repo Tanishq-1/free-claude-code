@@ -66,11 +66,7 @@ class ResponsesHandler:
             )
         if not request_data.model.strip():
             raise InvalidRequestError("Responses request model must not be empty.")
-        if (
-            request_data.input is None
-            or request_data.input == ""
-            or request_data.input == []
-        ):
+        if request_data.input is None or request_data.input in ("", []):
             raise InvalidRequestError("Responses request input must not be empty.")
 
         try:

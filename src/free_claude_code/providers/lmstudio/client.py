@@ -127,7 +127,7 @@ class LMStudioProvider(OpenAIChatProvider):
         value: int | None = None
         try:
             root = self._base_url
-            root = root[: -len("/v1")] if root.endswith("/v1") else root
+            root = root.removesuffix("/v1")
             response = httpx.get(f"{root}/api/v0/models", timeout=2.0)
             response.raise_for_status()
             loaded = [

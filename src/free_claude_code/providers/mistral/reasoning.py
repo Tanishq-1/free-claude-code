@@ -388,7 +388,7 @@ def _is_thinking_chunk_type(chunk_type: str | None) -> bool:
 
 def _clean_text(value: Any) -> str | None:
     if isinstance(value, str):
-        return value if value else None
+        return value or None
     return None
 
 

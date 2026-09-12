@@ -120,7 +120,7 @@ def history_retry_body(
             re.search(
                 r"invalid.+(?:input|messages).+\.id.+(?:letters|characters|ID)",
                 message,
-                re.I,
+                re.IGNORECASE,
             )
         )
         invalid_native = code in {
@@ -130,7 +130,7 @@ def history_retry_body(
             re.search(
                 r"invalid signature in thinking block|referenced reasoning item .+ (?:not found|expired)",
                 message,
-                re.I,
+                re.IGNORECASE,
             )
         )
         if not (invalid_id or invalid_native):

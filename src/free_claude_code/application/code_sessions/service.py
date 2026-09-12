@@ -7,6 +7,7 @@ from dataclasses import dataclass, field
 from pathlib import Path
 from typing import get_args
 
+from anyio import to_thread
 from loguru import logger
 
 from free_claude_code.application.session_events import (
@@ -239,10 +240,15 @@ class CodeService:
     async def _create(self, session_id: str, cwd: str) -> CodeSession:
         self._require_available()
         _validate_id(session_id)
-        try:
+
+        def _resolve_folder() -> Path:
             folder = Path(cwd).expanduser().resolve(strict=True)
             if not folder.is_dir():
                 raise ValueError
+            return folder
+
+        try:
+            folder = await to_thread.run_sync(_resolve_folder)
         except OSError, ValueError, RuntimeError:
             raise CodeValidationError(
                 "Choose an existing folder on the FCC computer."

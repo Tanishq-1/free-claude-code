@@ -255,7 +255,7 @@ class OpenAIResponsesTransport:
         validate_history(request.model_dump(mode="json"))
         if not request.model.strip():
             raise InvalidRequestError("Responses request model must not be empty.")
-        if request.input is None or request.input == "" or request.input == []:
+        if request.input is None or request.input in ("", []):
             raise InvalidRequestError("Responses request input must not be empty.")
         try:
             tools = ResponsesToolAdapter(request, self._tool_policy)
