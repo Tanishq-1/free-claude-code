@@ -17,6 +17,7 @@ from .model_refs import parse_model_fallbacks
 from .nim import NimSettings
 from .provider_catalog import (
     BEDROCK_DEFAULT_BASE,
+    LIGHTNING_DEFAULT_BASE,
     NARAROUTE_DEFAULT_BASE,
     SUPPORTED_PROVIDER_IDS,
     TELEPUB_VOYAGE_DEFAULT_BASE,
@@ -198,6 +199,15 @@ class Settings(BaseModel):
     telepub_voyage_base_url: NonEmptyString = Field(
         default=TELEPUB_VOYAGE_DEFAULT_BASE,
         validation_alias="TELEPUB_VOYAGE_BASE_URL",
+    )
+
+    # ==================== Lightning AI (OpenAI-compatible) ====================
+    lightning_api_key: OptionalNonEmptyString = Field(
+        default=None, validation_alias="LIGHTNING_API_KEY"
+    )
+    lightning_base_url: NonEmptyString = Field(
+        default=LIGHTNING_DEFAULT_BASE,
+        validation_alias="LIGHTNING_BASE_URL",
     )
 
     # ==================== Fireworks AI Config ====================
@@ -497,6 +507,9 @@ class Settings(BaseModel):
     )
     llm7_proxy: OptionalNonEmptyString = Field(
         default=None, validation_alias="LLM7_PROXY"
+    )
+    lightning_proxy: OptionalNonEmptyString = Field(
+        default=None, validation_alias="LIGHTNING_PROXY"
     )
     fireworks_proxy: OptionalNonEmptyString = Field(
         default=None, validation_alias="FIREWORKS_PROXY"
