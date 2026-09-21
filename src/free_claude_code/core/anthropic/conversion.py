@@ -22,6 +22,8 @@ from free_claude_code.core.openai_chat import (
     close_chat_tool_result_turns,
     image_tool_result_label,
 )
+from free_claude_code.core.tool_schema_patterns import translate_tool_schema_patterns
+
 from .content import get_block_attr, get_block_type
 from .image_sources import AnthropicImageSourceError, portable_anthropic_image_url
 from .models import MessagesRequest
@@ -31,7 +33,6 @@ from .tool_results import (
     ToolResultText,
     decompose_tool_result_content,
 )
-from .tool_schema import sanitize_tool_schema_patterns
 from .utils import set_if_not_none
 
 
@@ -791,7 +792,7 @@ class AnthropicToOpenAIConverter:
                 "function": {
                     "name": tool.name,
                     "description": tool.description or "",
-                    "parameters": sanitize_tool_schema_patterns(
+                    "parameters": translate_tool_schema_patterns(
                         _tool_input_schema(tool)
                     ),
                 },
