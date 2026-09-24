@@ -1,5 +1,6 @@
 """Local admin UI routes and APIs."""
 
+import asyncio
 from collections.abc import Awaitable, Callable, Mapping
 from pathlib import Path
 from time import perf_counter
@@ -178,6 +179,24 @@ async def local_provider_status(
         key: entry.value or ""
         for key, entry in (await services.admin.admin_values()).items()
     }
+
+    return await _check_local_provider(
+        provider_id,
+        _local_provider_url(provider_id, values),
+        LOCAL_PROVIDER_PATHS[provider_id],
+    )
+
+
+@router.get("/admin/api/providers/local-status")
+async def local_providers_status(
+    request: Request, services: ApiServices = Depends(get_services)
+):
+    require_loopback_admin(request)
+    values = {
+        key: entry.value or ""
+        for key, entry in (await services.admin.admin_values()).items()
+    }
+
     async def _probe(provider_id: str, path: str) -> JsonObject | None:
         base_url = _local_provider_url(provider_id, values)
         if provider_id == "custom" and not base_url.strip():

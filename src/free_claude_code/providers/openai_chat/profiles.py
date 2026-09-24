@@ -875,7 +875,7 @@ OPENAI_CHAT_PROFILES: dict[str, OpenAIChatProfile] = {
     "custom": OpenAIChatProfile(
         _policy(
             "CUSTOM",
-            ReasoningReplayMode.DISABLED,
+            ReasoningReplayMode.REASONING_CONTENT,
             default_max_tokens=ANTHROPIC_DEFAULT_MAX_OUTPUT_TOKENS,
         ),
         NO_REASONING,
