@@ -47,6 +47,7 @@ The LLaMA.cpp icon comes from the upstream llama.cpp repository; its MIT license
 | `sambanova-color.svg` | https://unpkg.com/@lobehub/icons-static-svg@1.95.0/icons/sambanova-color.svg |
 | `scaleway.svg` | https://www.scaleway.com/favicon/website/favicon.svg |
 | `siliconcloud-color.svg` | https://unpkg.com/@lobehub/icons-static-svg@1.95.0/icons/siliconcloud-color.svg |
+| `telepub_voyage.svg` | Project-authored neutral glyph (not a brand mark) |
 | `together-color.svg` | https://unpkg.com/@lobehub/icons-static-svg@1.95.0/icons/together-color.svg |
 | `tokenrouter.png` | https://www.tokenrouter.com/logo-without-title.png |
 | `vercel.svg` | https://unpkg.com/@lobehub/icons-static-svg@1.95.0/icons/vercel.svg |
