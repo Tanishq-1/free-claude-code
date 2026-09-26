@@ -341,6 +341,28 @@ def test_convert_tool_without_input_schema_uses_empty_object_schema():
     ]
 
 
+def test_convert_tools_preserves_supported_pattern():
+    tools = [
+        MockTool(
+            "validate",
+            None,
+            {
+                "type": "object",
+                "properties": {
+                    "slug": {"type": "string", "pattern": r"^[a-z-]+$"},
+                },
+            },
+        )
+    ]
+
+    result = AnthropicToOpenAIConverter.convert_tools(tools)
+
+    assert result[0]["function"]["parameters"]["properties"]["slug"] == {
+        "type": "string",
+        "pattern": r"^[a-z-]+$",
+    }
+
+
 @pytest.mark.parametrize(
     "tool_choice,expected",
     [
