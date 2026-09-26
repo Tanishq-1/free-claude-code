@@ -319,6 +319,19 @@ _PROVIDER_FIELD_OVERRIDES: dict[str, ProviderFieldOverride] = {
             "Leave blank if the endpoint does not require one."
         ),
     },
+    "TELEPUB_VOYAGE_API_KEY": {
+        "label": "Telepub Voyage API Key",
+        "description": (
+            "Telepub Voyage OpenAI-compatible API key for "
+            "voyage.prod.telepub.cn/voyage/api."
+        ),
+    },
+    "TELEPUB_VOYAGE_BASE_URL": {
+        "description": (
+            "Telepub Voyage OpenAI-compatible Chat Completions base URL. "
+            "Defaults to https://voyage.prod.telepub.cn/voyage/api."
+        ),
+    },
 }
 
 

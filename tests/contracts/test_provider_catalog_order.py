@@ -62,6 +62,7 @@ _EXPECTED_PROVIDER_ORDER: tuple[str, ...] = (
     "llamacpp",
     "ollama",
     "custom",
+    "telepub_voyage",
 )
 
 

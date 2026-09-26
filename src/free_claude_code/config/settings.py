@@ -18,6 +18,7 @@ from .nim import NimSettings
 from .provider_catalog import (
     BEDROCK_DEFAULT_BASE,
     SUPPORTED_PROVIDER_IDS,
+    TELEPUB_VOYAGE_DEFAULT_BASE,
 )
 from .reasoning import ReasoningPreference
 
@@ -198,6 +199,15 @@ class Settings(BaseModel):
     # ==================== Cheaper Inference (OpenAI-compatible) ====================
     cheaperinference_api_key: OptionalNonEmptyString = Field(
         default=None, validation_alias="CHEAPER_INFERENCE_API_KEY"
+    )
+
+    # ==================== Telepub Voyage Config ====================
+    telepub_voyage_api_key: OptionalNonEmptyString = Field(
+        default=None, validation_alias="TELEPUB_VOYAGE_API_KEY"
+    )
+    telepub_voyage_base_url: NonEmptyString = Field(
+        default=TELEPUB_VOYAGE_DEFAULT_BASE,
+        validation_alias="TELEPUB_VOYAGE_BASE_URL",
     )
 
     # ==================== Fireworks AI Config ====================
@@ -547,6 +557,9 @@ class Settings(BaseModel):
     )
     custom_proxy: OptionalNonEmptyString = Field(
         default=None, validation_alias="CUSTOM_PROXY"
+    )
+    telepub_voyage_proxy: OptionalNonEmptyString = Field(
+        default=None, validation_alias="TELEPUB_VOYAGE_PROXY"
     )
 
     # ==================== Provider Rate Limiting ====================

@@ -794,6 +794,14 @@ OPENAI_CHAT_PROFILES: dict[str, OpenAIChatProfile] = {
         NO_REASONING,
         model_listing=OpenAIModelListing(path="/models"),
     ),
+    "telepub_voyage": OpenAIChatProfile(
+        _policy(
+            "TELEPUB_VOYAGE",
+            ReasoningReplayMode.REASONING_CONTENT,
+            default_max_tokens=ANTHROPIC_DEFAULT_MAX_OUTPUT_TOKENS,
+        ),
+        NO_REASONING,
+    ),
     "custom": OpenAIChatProfile(
         _policy(
             "CUSTOM",
