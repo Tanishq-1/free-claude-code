@@ -28,6 +28,7 @@ from free_claude_code.config.provider_catalog import (
     ProviderAuthKind,
 )
 from free_claude_code.core.json_types import JsonObject, JsonValue
+from free_claude_code.core.openai_base_url import openai_v1_base_url
 from free_claude_code.core.version import package_version
 
 from .admin_security import require_loopback_admin
@@ -66,6 +67,7 @@ LOCAL_PROVIDER_PATHS = {
     "lmstudio": "/models",
     "llamacpp": "/models",
     "ollama": "/api/tags",
+    "custom": "/models",
 }
 _LOCAL_PROVIDER_CHECK_FAILURE_MESSAGE = (
     "Could not connect. Verify the URL and that the local provider is running."
@@ -515,11 +517,21 @@ def _local_provider_url(provider_id: str, values: dict[str, str]) -> str:
         return values.get("LLAMACPP_BASE_URL", "")
     if provider_id == "ollama":
         return values.get("OLLAMA_BASE_URL", "")
+    if provider_id == "custom":
+        # The runtime's custom profile normalizes the configured URL to its
+        # OpenAI ``/v1`` API base, so probe the same base the runtime uses.
+        configured = values.get("CUSTOM_BASE_URL", "").strip()
+        return openai_v1_base_url(configured) if configured else ""
     return ""
 
 
 async def _check_local_provider(
-    provider_id: str, base_url: str, path: str
+    provider_id: str,
+    base_url: str,
+    path: str,
+    *,
+    api_key: str = "",
+    proxy: str = "",
 ) -> JsonObject:
     clean_url = base_url.strip().rstrip("/")
     if not clean_url:
@@ -531,9 +543,19 @@ async def _check_local_provider(
         }
 
     url = f"{clean_url}{path}"
+    headers = {"Authorization": f"Bearer {api_key.strip()}"} if api_key.strip() else {}
     try:
-        async with httpx.AsyncClient(timeout=1.5) as client:
-            response = await client.get(url)
+        # The runtime routes custom provider traffic through CUSTOM_PROXY, so
+        # the status probe must use the same transport to agree with it.
+        async with httpx.AsyncClient(
+            timeout=1.5, proxy=proxy.strip() or None
+        ) as client:
+            # Only attach headers when a credential is configured — keyless
+            # local providers must not receive an Authorization header at all.
+            if headers:
+                response = await client.get(url, headers=headers)
+            else:
+                response = await client.get(url)
         ok = 200 <= response.status_code < 300
         return {
             "provider_id": provider_id,
