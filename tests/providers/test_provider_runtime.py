@@ -1608,7 +1608,11 @@ async def test_custom_provider_constructs_without_api_key():
     settings = _make_settings(custom_api_key=None)
 
     with patch("free_claude_code.providers.openai_chat.client.AsyncOpenAI"):
-        provider = await create_provider("custom", settings)
+        provider = await create_provider(
+            "custom",
+            settings,
+            ProviderAdmissionRegistry(ProviderAdmissionLimits.from_settings(settings)),
+        )
 
     assert isinstance(provider, OpenAIChatProvider)
     assert provider._api_key is None
@@ -1619,7 +1623,11 @@ async def test_custom_provider_uses_configured_api_key_when_present():
     settings = _make_settings(custom_api_key="sk-custom-secret")
 
     with patch("free_claude_code.providers.openai_chat.client.AsyncOpenAI"):
-        provider = await create_provider("custom", settings)
+        provider = await create_provider(
+            "custom",
+            settings,
+            ProviderAdmissionRegistry(ProviderAdmissionLimits.from_settings(settings)),
+        )
 
     assert isinstance(provider, OpenAIChatProvider)
     assert provider._api_key == "sk-custom-secret"
@@ -1634,7 +1642,11 @@ async def test_keyed_provider_still_requires_api_key():
         patch("free_claude_code.providers.openai_chat.client.AsyncOpenAI"),
         pytest.raises(ApplicationUnavailableError, match="OPENROUTER_API_KEY"),
     ):
-        await create_provider("open_router", settings)
+        await create_provider(
+            "open_router",
+            settings,
+            ProviderAdmissionRegistry(ProviderAdmissionLimits.from_settings(settings)),
+        )
 
 
 @pytest.mark.asyncio
@@ -1656,7 +1668,11 @@ async def test_keyless_custom_provider_installs_authorization_stripper():
     with patch(
         "free_claude_code.providers.openai_chat.client.AsyncOpenAI"
     ) as mock_client:
-        await create_provider("custom", settings)
+        await create_provider(
+            "custom",
+            settings,
+            ProviderAdmissionRegistry(ProviderAdmissionLimits.from_settings(settings)),
+        )
 
     http_client = mock_client.call_args.kwargs["http_client"]
     assert http_client is not None
@@ -1671,7 +1687,11 @@ async def test_keyed_custom_provider_keeps_default_http_client():
     with patch(
         "free_claude_code.providers.openai_chat.client.AsyncOpenAI"
     ) as mock_client:
-        await create_provider("custom", settings)
+        await create_provider(
+            "custom",
+            settings,
+            ProviderAdmissionRegistry(ProviderAdmissionLimits.from_settings(settings)),
+        )
 
     assert mock_client.call_args.kwargs["http_client"] is None
 

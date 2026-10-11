@@ -1,4 +1,6 @@
-from free_claude_code.core.anthropic.tool_schema import sanitize_tool_schema_patterns
+from free_claude_code.providers.nvidia_nim.native_tool_schema import (
+    sanitize_tool_schema_patterns,
+)
 
 # Claude Code's Artifact tool sends a JSON Schema pattern using Unicode property
 # escapes plus a negative lookahead; OpenAI-compatible validators reject it.
