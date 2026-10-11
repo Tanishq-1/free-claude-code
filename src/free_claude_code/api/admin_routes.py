@@ -172,10 +172,15 @@ async def local_provider_status(
         key: entry.value or ""
         for key, entry in (await services.admin.admin_values()).items()
     }
+    custom = provider_id == "custom"
     return await _check_local_provider(
         provider_id,
         _local_provider_url(provider_id, values),
         LOCAL_PROVIDER_PATHS[provider_id],
+        # The runtime sends the custom credential and proxy on its requests,
+        # so the status probe must agree with that transport.
+        api_key=values.get("CUSTOM_API_KEY", "") if custom else "",
+        proxy=values.get("CUSTOM_PROXY", "") if custom else "",
     )
 
 

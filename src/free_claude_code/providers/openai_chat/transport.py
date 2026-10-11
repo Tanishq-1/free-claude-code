@@ -1493,7 +1493,12 @@ class _OpenAIChatStreamRunner:
                     or not execution.can_attempt
                     or (
                         isinstance(error, AmbiguousToolCallIdentityError)
-                        and terminal_seen
+                        and (
+                            terminal_seen
+                            # Post-terminal framers (NIM) buffer finish_reason
+                            # until the raw stream ends; honor that hold here.
+                            or getattr(stream, "terminal_pending", False)
+                        )
                     )
                 ):
                     raise

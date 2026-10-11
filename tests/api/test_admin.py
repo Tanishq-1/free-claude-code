@@ -2257,13 +2257,11 @@ def test_admin_custom_provider_status_sends_configured_api_key(monkeypatch, tmp_
         "free_claude_code.api.admin_routes.httpx.AsyncClient",
         AuthCheckingAsyncClient,
     ):
-        response = _local_client(app).get("/admin/api/providers/local-status")
+        response = _local_client(app).get("/admin/api/providers/custom/local-status")
 
     assert response.status_code == 200
-    providers = {
-        provider["provider_id"]: provider for provider in response.json()["providers"]
-    }
-    assert providers["custom"]["status"] == "reachable"
+    assert response.json()["provider_id"] == "custom"
+    assert response.json()["status"] == "reachable"
     assert observed_headers["http://custom.local/v1/models"] == {
         "Authorization": "Bearer custom-secret-key"
     }
@@ -2300,13 +2298,11 @@ def test_admin_custom_provider_status_probes_keyless_endpoint_without_auth(
     with patch(
         "free_claude_code.api.admin_routes.httpx.AsyncClient", KeylessAsyncClient
     ):
-        response = _local_client(app).get("/admin/api/providers/local-status")
+        response = _local_client(app).get("/admin/api/providers/custom/local-status")
 
     assert response.status_code == 200
-    providers = {
-        provider["provider_id"]: provider for provider in response.json()["providers"]
-    }
-    assert providers["custom"]["status"] == "reachable"
+    assert response.json()["provider_id"] == "custom"
+    assert response.json()["status"] == "reachable"
     assert observed_headers["http://custom.local/v1/models"] == {}
 
 
@@ -2345,13 +2341,11 @@ def test_admin_custom_provider_status_probes_normalized_v1_base(monkeypatch, tmp
         "free_claude_code.api.admin_routes.httpx.AsyncClient",
         VersionedModelsAsyncClient,
     ):
-        response = _local_client(app).get("/admin/api/providers/local-status")
+        response = _local_client(app).get("/admin/api/providers/custom/local-status")
 
     assert response.status_code == 200
-    providers = {
-        provider["provider_id"]: provider for provider in response.json()["providers"]
-    }
-    assert providers["custom"]["status"] == "reachable"
+    assert response.json()["provider_id"] == "custom"
+    assert response.json()["status"] == "reachable"
     assert "http://custom.local/v1/models" in probed_urls
     assert "http://custom.local/models" not in probed_urls
 
@@ -2384,15 +2378,12 @@ def test_admin_custom_provider_status_uses_configured_proxy(monkeypatch, tmp_pat
         "free_claude_code.api.admin_routes.httpx.AsyncClient",
         ProxyCapturingAsyncClient,
     ):
-        response = _local_client(app).get("/admin/api/providers/local-status")
+        response = _local_client(app).get("/admin/api/providers/custom/local-status")
 
     assert response.status_code == 200
-    providers = {
-        provider["provider_id"]: provider for provider in response.json()["providers"]
-    }
-    assert providers["custom"]["status"] == "reachable"
-    assert "http://127.0.0.1:9999" in observed_proxies
-    assert observed_proxies.count(None) == len(providers) - 1
+    assert response.json()["provider_id"] == "custom"
+    assert response.json()["status"] == "reachable"
+    assert observed_proxies == ["http://127.0.0.1:9999"]
 
 
 def test_admin_config_exposes_structured_provider_configuration_targets(

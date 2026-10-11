@@ -1,5 +1,6 @@
 """Normalize native MiniMax-M3 tool markup exposed by NVIDIA NIM."""
 
+import asyncio
 import json
 import uuid
 from collections.abc import AsyncIterator, Mapping, Sequence
@@ -27,22 +28,48 @@ _ELEMENT_END_START = f"{_NAMESPACE}</"
 _MIXED_TEXT_FIELD = "$text"
 _MAX_NATIVE_TOOL_BLOCK_CHARS = 4 * 1024 * 1024
 _MAX_NATIVE_ARGUMENT_DEPTH = 64
+# NIM can emit deltas after finish_reason; hold the terminal marker only
+# this long so stalled streams still surface prompt protocol errors and
+# keep hidden-stream recovery working.
+_TERMINAL_HOLD_SECONDS = 0.5
 
 
 class NimNativeToolProtocolError(RetryableToolProtocolError):
     """NIM exposed malformed model-native tool markup instead of tool deltas."""
 
 
+class _TerminalHold:
+    """Shared state for a finish_reason buffered ahead of its re-emission."""
+
+    __slots__ = ("pending",)
+
+    def __init__(self) -> None:
+        self.pending = False
+
+
 class _NormalizedNativeToolStream(AsyncIterator[Any]):
     """Expose normalized chunks while retaining the raw stream's close contract."""
 
-    def __init__(self, iterator: AsyncIterator[Any], source: Any) -> None:
+    def __init__(
+        self, iterator: AsyncIterator[Any], source: Any, hold: _TerminalHold
+    ) -> None:
         self._iterator = iterator
         self._source = source
+        self._hold = hold
         self._closed = False
 
     def __aiter__(self) -> _NormalizedNativeToolStream:
         return self
+
+    @property
+    def terminal_pending(self) -> bool:
+        """Whether a raw terminal marker is buffered but not re-emitted yet.
+
+        NIM's post-terminal framing holds ``finish_reason`` until the raw
+        stream ends; consumers that gate on "stop seen" (for example
+        recovery decisions) consult this instead of the stripped chunks.
+        """
+        return self._hold.pending
 
     async def __anext__(self) -> Any:
         if self._closed:
@@ -208,6 +235,7 @@ def normalize_nim_native_tool_stream(
     once the raw stream ends.
     """
     schemas = _openai_tool_schemas(body)
+    hold = _TerminalHold()
 
     async def _iter() -> AsyncIterator[Any]:
         content_framer = _MiniMaxM3ToolFramer()
@@ -216,20 +244,29 @@ def normalize_nim_native_tool_stream(
         held_finish_reason: Any = None
         held_usage: Any = None
 
-        async for chunk in stream:
-            usage = getattr(chunk, "usage", None)
+        iterator = stream.__aiter__()
+        chunk: Any = None
+        while True:
+            if chunk is None:
+                try:
+                    chunk = await anext(iterator)
+                except StopAsyncIteration:
+                    break
+            current, chunk = chunk, None
+
+            usage = getattr(current, "usage", None)
             if usage is not None:
                 held_usage = usage
 
-            choices = getattr(chunk, "choices", None)
+            choices = getattr(current, "choices", None)
             if not choices:
-                yield chunk
+                yield current
                 continue
 
             choice = choices[0]
             delta = getattr(choice, "delta", None)
             if delta is None:
-                yield chunk
+                yield current
                 continue
 
             native_tool_calls = getattr(delta, "tool_calls", None)
@@ -247,11 +284,13 @@ def normalize_nim_native_tool_stream(
                 else reasoning
             )
             finish_reason = getattr(choice, "finish_reason", None)
-            if finish_reason is not None and held_finish_reason is None:
+            first_terminal = finish_reason is not None and held_finish_reason is None
+            if first_terminal:
                 held_finish_reason = finish_reason
+                hold.pending = True
 
             normalized = _normalized_chunks(
-                chunk,
+                current,
                 delta,
                 content=safe_content,
                 reasoning_content=safe_reasoning,
@@ -259,6 +298,19 @@ def normalize_nim_native_tool_stream(
             )
             for normalized_chunk in normalized:
                 yield normalized_chunk
+
+            if first_terminal:
+                try:
+                    chunk = await asyncio.wait_for(
+                        anext(iterator), _TERMINAL_HOLD_SECONDS
+                    )
+                except StopAsyncIteration:
+                    break
+                except TimeoutError:
+                    # The raw stream stalled after its terminal chunk; stop
+                    # holding so the framers finalize (and raise promptly)
+                    # instead of blocking the consumer forever.
+                    break
 
         content, reasoning, generated_calls = _finish_native_tool_framers(
             content_framer,
@@ -275,12 +327,13 @@ def normalize_nim_native_tool_stream(
         ):
             yield normalized_chunk
         if held_finish_reason is not None:
+            hold.pending = False
             terminal = _chunk()
             terminal.choices[0].finish_reason = held_finish_reason
             terminal.usage = held_usage
             yield terminal
 
-    return _NormalizedNativeToolStream(_iter(), stream)
+    return _NormalizedNativeToolStream(_iter(), stream, hold)
 
 
 def _normalized_chunks(

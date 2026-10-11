@@ -335,10 +335,10 @@ async def test_raw_nim_stop_survives_later_null_and_empty_choices(
 ):
     normalize = native_tool_stream._normalized_chunks
 
-    def suppress_terminal(chunk, choice, *args, **kwargs):
-        if choice.finish_reason is not None:
+    def suppress_terminal(chunk, delta, *, hold_terminal=False, **kwargs):
+        if hold_terminal:
             return []
-        return normalize(chunk, choice, *args, **kwargs)
+        return normalize(chunk, delta, hold_terminal=hold_terminal, **kwargs)
 
     monkeypatch.setattr(native_tool_stream, "_normalized_chunks", suppress_terminal)
     first, terminal = _nim_partial_terminal("stop")
@@ -354,8 +354,11 @@ async def test_raw_nim_stop_survives_later_null_and_empty_choices(
             wire,
         )
     assert len(bodies) == 1
+    # The post-terminal framer re-emits the buffered stop after the trailing
+    # null/empty-choices chunks, so the delivery completes instead of
+    # truncating into a terminal error.
     assert parse_sse_text(result)[-1].event == (
-        "error" if wire == "messages" else "response.failed"
+        "message_stop" if wire == "messages" else "response.completed"
     )
 
 
